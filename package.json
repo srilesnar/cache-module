@@ -1,0 +1,14 @@
+{
+  "name": "cache-module",
+  "version": "0.0.1",
+  "description": "This is the module for the cache layer implementation",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "underscore": "~1.8.3"
+  },
+  "author": "Srikumar Swaminathan <srilesnar@gmail.com>",
+  "license": "ISC"
+}
