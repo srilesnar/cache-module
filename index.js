@@ -1,68 +1,102 @@
 /**
  * Created by srikuswaminathan on 10/12/15.
  */
+var Buffer = require("buffer");
+var cacheInstance = (function() {
 
 
-var cache= [];
-var duration;
-var sizeBytes;
-var sizeElements;
-var dest;
+    var instance;
 
-function initCache(expiry, bytesSize, elemSize, destination){
-    duration = expiry;
-    sizeBytes = bytesSize;
-    sizeElements = elemSize;
-    dest = destination;
-}
+    function init() {
+        var cache = {};
+        var duration;
+        var sizeBytes;
+        var sizeElements;
+        var dest;
 
-function addToCache(key, data){
-        cache[key] = {
-            data: data,
-            time: new Date
+        function forwardToDestination(key) {
+            //TODO forward to a local server to return data
+            return "Testing";
         };
-}
 
-function handleRequest(key){
-    var success = validateCacheData(key);
-    if(success){
-        return cache[key].data;
-    } else {
-        var data = forwardToDestination(key);
-        cache[key] = {
-            data: data,
-            time: new Date
+        function validateCacheData(key) {
+            //Element is not found in the cache
+            if (cache.length ===0 || cache[key] === undefined) {
+                return false;
+            }
+
+            var time = cache[key].time;
+            var currTime = new Date().getTime();
+
+            if ((currTime - time) > duration) {
+
+                return false;
+            } else {
+                //Valid cache entry
+                return true;
+            }
         };
-        return data;
-    }
-}
 
-function forwardToDestination(key){
-    //TODO forward to a local server to return data
-}
+        function addToCache(key, data) {
+            //Check for cache size and count
+            if(cache.length >= sizeElements || getCacheSizeInBytes() >= sizeBytes){
+                cache.splice(0, 1);
+                addToCache(key, data);
+            } else {
+                cache[key] = {
+                    data: data,
+                    time: new Date().getTime()
+                };
+            }
+        };
 
-function validateCacheData(key){
+        function getCacheSizeInBytes(){
+            var size = 0;
+            for(var  i=0; i< cache.length; i++){
+                size += Buffer.byteLength( cache[i].data,'utf8');
+            }
+            return size;
 
-    //Element is not found in the cache
-    if(cache[key] === undefined){
-        return false;
-    }
+        };
 
-    var time = cache[key].time;
-    var currTime = new Date();
-
-    if((currTime - time) > duration){
-        var index = cache.indexOf(key);
-        //Remove the element from cache and return false
-        cache.splice(index, 1);
-        return false;
-    } else {
-        //Valid cache entry
-        return true;
-    }
-}
+        function printCache(){
+            console.log(JSON.stringify(cache));
+        }
 
 
-exports.initCache = initCache;
-exports.addToCache = addToCache;
-exports.handleRequest = handleRequest;
+        return {
+            initCache: function initCache(expiry, bytesSize, elemSize, destination) {
+                duration = expiry;
+                sizeBytes = bytesSize;
+                sizeElements = elemSize;
+                dest = destination;
+            },
+
+
+            handleRequest: function handleRequest(request) {
+                var key = request.url;
+                var success = validateCacheData(key);
+                console.log(JSON.stringify(cache));
+                if (success) {
+                    return cache[key].data + "--From cache";
+                } else {
+                    var data = forwardToDestination(key);
+                    addToCache(key, data);
+                    return data;
+                }
+            }
+        };
+
+    };
+
+    return {
+        getInstance: function () {
+            if (!instance) {
+                instance = init();
+            }
+            return instance;
+        }
+    };
+})();
+
+exports.cacheIns = cacheInstance.getInstance();

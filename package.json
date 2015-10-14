@@ -1,6 +1,6 @@
 {
   "name": "cache-module",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "This is the module for the cache layer implementation",
   "main": "index.js",
   "scripts": {
@@ -10,5 +10,14 @@
     "underscore": "~1.8.3"
   },
   "author": "Srikumar Swaminathan <srilesnar@gmail.com>",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/srilesnar/cache-module.git"
+  },
+  "bugs": {
+    "url": "https://github.com/srilesnar/cache-module/issues"
+  },
+  "homepage": "https://github.com/srilesnar/cache-module"
 }
