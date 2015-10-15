@@ -2,6 +2,7 @@
  * Created by srikuswaminathan on 10/12/15.
  */
 var Buffer = require("buffer");
+var http = require("http");
 var cacheInstance = (function() {
 
 
@@ -14,14 +15,30 @@ var cacheInstance = (function() {
         var sizeElements;
         var dest;
 
-        function forwardToDestination(key) {
-            //TODO forward to a local server to return data
-            return "Testing";
+        function forwardToDestination(key, callback) {
+            var options = {
+                host: 'localhost',
+                port: 9000,
+                path: key
+            };
+            http.get(options, function(response){
+                response.on('data', function(data){
+                    var strData = data.toString();
+                    addToCache(key, strData);
+                    callback(data);
+                });
+
+                response.on('error', function(error){
+                    //log the error
+                    callback("Resource not found");
+                });
+
+            });
         };
 
         function validateCacheData(key) {
             //Element is not found in the cache
-            if (cache.length ===0 || cache[key] === undefined) {
+            if (cache.length === 0 || cache[key] === undefined) {
                 return false;
             }
 
@@ -73,16 +90,14 @@ var cacheInstance = (function() {
             },
 
 
-            handleRequest: function handleRequest(request) {
+            handleRequest: function handleRequest(request, callback) {
                 var key = request.url;
                 var success = validateCacheData(key);
                 console.log(JSON.stringify(cache));
                 if (success) {
-                    return cache[key].data + "--From cache";
+                    callback(cache[key].data);
                 } else {
-                    var data = forwardToDestination(key);
-                    addToCache(key, data);
-                    return data;
+                    forwardToDestination(key, callback);
                 }
             }
         };
