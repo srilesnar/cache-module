@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "underscore": "~1.8.3"
+    "underscore": "~1.8.3",
+    "object-sizeof": "~1.0.6"
   },
   "author": "Srikumar Swaminathan <srilesnar@gmail.com>",
   "license": "ISC",

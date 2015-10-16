@@ -3,17 +3,18 @@
  */
 var Buffer = require("buffer");
 var http = require("http");
+var _ = require("underscore");
+var sizeOf = require("object-sizeof");
 var cacheInstance = (function() {
 
 
     var instance;
 
-    function init() {
+    function init(expiry, bytesSize, elemSize) {
         var cache = {};
-        var duration;
-        var sizeBytes;
-        var sizeElements;
-        var dest;
+        var duration = expiry;
+        var sizeBytes = bytesSize;
+        var sizeElements = elemSize;
 
         function forwardToDestination(key, callback) {
             var options = {
@@ -38,9 +39,10 @@ var cacheInstance = (function() {
 
         function validateCacheData(key) {
             //Element is not found in the cache
-            if (cache.length === 0 || cache[key] === undefined) {
+            if (_.keys(cache).length === 0 || cache[key] === undefined) {
                 return false;
             }
+
 
             var time = cache[key].time;
             var currTime = new Date().getTime();
@@ -55,45 +57,51 @@ var cacheInstance = (function() {
         };
 
         function addToCache(key, data) {
+
+            if(sizeOf(data) >= sizeBytes ){
+                return;
+            }
             //Check for cache size and count
-            if(cache.length >= sizeElements || getCacheSizeInBytes() >= sizeBytes){
-                cache.splice(0, 1);
-                addToCache(key, data);
-            } else {
-                cache[key] = {
-                    data: data,
-                    time: new Date().getTime()
-                };
+            if(_.keys(cache).length >= sizeElements || sizeOf(cache) >= sizeBytes){
+                invalidateCache(key, data);
+
             }
+            cache[key] = {
+                data: data,
+                time: new Date().getTime()
+            };
+            printCache();
         };
 
-        function getCacheSizeInBytes(){
-            var size = 0;
-            for(var  i=0; i< cache.length; i++){
-                size += Buffer.byteLength( cache[i].data,'utf8');
-            }
-            return size;
+        function invalidateCache(key, data){
 
-        };
+            var oldestCacheObj = {time:99999999999999999};
+            var oldestKey = undefined;
+            for(var x in cache){
+                if(cache[x].time  < oldestCacheObj.time){
+                    oldestCacheObj = cache[x];
+                    oldestKey = x;
+                }
+            }
+            delete cache[oldestKey];
+            var neededBytes = sizeOf(data);
+            var availableBytes = sizeBytes - sizeOf(cache);
+            addToCache(key, data);
+        }
 
         function printCache(){
             console.log(JSON.stringify(cache));
+            console.log("Total cache Size: "+sizeOf(cache));
         }
 
 
         return {
-            initCache: function initCache(expiry, bytesSize, elemSize, destination) {
-                duration = expiry;
-                sizeBytes = bytesSize;
-                sizeElements = elemSize;
-                dest = destination;
-            },
 
 
             handleRequest: function handleRequest(request, callback) {
                 var key = request.url;
                 var success = validateCacheData(key);
-                console.log(JSON.stringify(cache));
+                //console.log(JSON.stringify(cache));
                 if (success) {
                     callback(cache[key].data);
                 } else {
@@ -105,13 +113,13 @@ var cacheInstance = (function() {
     };
 
     return {
-        getInstance: function () {
+        getInstance: function (expiry, bytesSize, elemSize) {
             if (!instance) {
-                instance = init();
+                instance = init(expiry, bytesSize, elemSize);
             }
             return instance;
         }
     };
 })();
 
-exports.cacheIns = cacheInstance.getInstance();
+exports.cacheIns = cacheInstance;
