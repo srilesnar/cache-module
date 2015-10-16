@@ -1,6 +1,6 @@
 {
   "name": "cache-module",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "This is the module for the cache layer implementation",
   "main": "index.js",
   "scripts": {
